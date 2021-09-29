@@ -34,13 +34,13 @@ library(ggrepel)
 ## Setup
 ##################################################################
 ## Specify main parameters
-#getwd()
+getwd()
 # setwd("C:/Users/hkenned6/Documents/Melichrus/Molecular/DArTseq_Melichrus/DArTseq_Melichrus_ingroup")
 overwrite <- TRUE
 ## Directories: choose an indir and an analysis name
 indir <- "data" 
 analysis_name <- "MELIngroup"
-runfilt <- TRUE
+runfilt <- FALSE
 
 ## Calculate other parameters
 dartname <- list.files(indir,"SNP_2.csv")
@@ -64,8 +64,8 @@ if(dir.exists(outdir)){
 ## the order must be the same, but the dartfile is not in a
 ## sensible order.
 library(dartR)
-#mygl <- gl.read.dart(dartfile)
-#save (mygl, file= "MELIngroup.rdata")
+# mygl <- gl.read.dart(dartfile)
+# save (mygl, file= "MELIngroup.rdata")
 ## Inspect gl
 #mygl
 
@@ -138,7 +138,7 @@ if(runfilt){
 
 # ## Filtering for PCA #######################################
 ## Remove any accidental duplicates in dataset (HTK96c.1 and HTK96e.1)
-mygl1 <- gl.drop.ind(mygl, ind.list=c("HTK96c.1", "HTK96e.1"), recalc = TRUE, mono.rm = TRUE)
+mygl1 <- gl.drop.ind(mygl, ind.list=c("HTK96c.1", "HTK96e.1", "ARC870b"), recalc = TRUE, mono.rm = TRUE)
 ## Average repeatability
 mygl1 <- gl.filter.RepAvg(mygl1,threshold = 0.95)
 ## Remove monomorphic loci
@@ -148,7 +148,7 @@ mygl1 <- gl.filter.callrate(mygl1,method = "loc",threshold = 0.97)
 ##  Thin to one snp per tag. Usually best to choose the one with the highest minor allele frequency.
 mygl1 <- gl.filter.secondaries(mygl1,method = "best")
 ## Filter out individuals with too much missing data
-mygl1 <- gl.filter.callrate(mygl1,method = "ind",threshold = 0.9,recalc = TRUE, mono.rm = TRUE)
+mygl1 <- gl.filter.callrate(mygl1,method = "ind",threshold = 0.91,recalc = TRUE, mono.rm = TRUE)
 ##  Filter out loci with very low minor allele frequencies
 ##  exclude step for pop stats as this biases statistics like heterozygosities
 ##  and analyses based on allele frequency spectra.
@@ -165,7 +165,7 @@ mygl1 <- gl.recalc.metrics(mygl1)
 
 ## Save the population IDs as a vector
 pop0 <- mygl1@pop
-pop0
+#pop0
 ## Save filtered data as a compressed R data object.
 save(mygl1,file = file.path("temp",paste0(analysis_name,"_filtered1.rda")))
 #mygl1
@@ -224,7 +224,7 @@ ggplotly(tooltip=c("pop","ind")) # shows pop twice or not at all
 
 ##Name, edit and save plot ######################################
 ##Colour code by specific metadata column, bw theme, axes proportional to % explained, axes labelled
-GenuswidePCA1 <- ggplot(as.data.frame(mypc$scores), aes(PC1,PC2,col=metadata1$scientific_name_OTU))+
+GenuswidePCA1 <- ggplot(as.data.frame(mypc$scores), aes(PC1,PC2,col=metadata1$sens.lat.complex))+
   geom_point()+theme_bw()+xlab(paste0("PC1 (",round(100*mypc$eig[1]/sum(mypc$eig),1),"%)"))+
   ylab(paste0("PC2 (",round(100*mypc$eig[2]/sum(mypc$eig),1),"%)"))+
   coord_fixed(ratio = 1, xlim = NULL, ylim = NULL, expand = TRUE, clip = "on")
