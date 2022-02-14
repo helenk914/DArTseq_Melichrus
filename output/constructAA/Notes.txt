@@ -1,0 +1,3 @@
+AA and AA1 use broadly defined populations, and dataset filtered for MAF.
+AA1 used more iterations of MCMC.
+AA2 uses collection site as population and dataset not filtered for MAF. Slightly different script used to generate allelic frequencies by population. 

@@ -2,12 +2,29 @@
 ################# Species Map ################################
 ##############################################################
 
+# library(dplyr)
+# library(ggplot2) 
+# library(sf) 
+# library(raster) 
+library(ggspatial) 
+#library(mapview)
+library(rnaturalearth) 
+#library(sp) 
+library(rnaturalearthhires)
+
+install.packages("rnaturalearthhires", repos = "https://packages.ropensci.org", type = "source") 
+install.packages("rnaturalearthdata")
+
+
+
+
+
 #install spatial packages
-install.packages("plyr")
-install.packages("dplyr")
-install.packages("ggplot2")
-install.packages("rgdal")
-install.packages("tmap")
+# install.packages("plyr")
+# install.packages("dplyr")
+# install.packages("ggplot2")
+# install.packages("rgdal")
+#install.packages("tmap")
 install.packages("ggmap")
 install.packages("sf")
 install.packages("broom")
@@ -27,7 +44,7 @@ install.packages("rgbif")
 install.packages("mapview")
 install.packages("scrubr")
 install.packages("sp")
-
+install.packages("rgeos")
 
 
 #load spatial packages
@@ -64,7 +81,7 @@ library(sp)
 
 
 #set the working directory 
-getwd()
+#getwd()
 
 
 
@@ -73,82 +90,67 @@ getwd()
 
 
 
-#####################GET the data of your spices if you do not have Data########################
-# Pull records on a family or ... from GBIF
-key <- name_suggest(q='Phebalium glandulosum', rank='species')$data$key[1]
-# Show metadata of records for phebalium in the database
-occ_search(taxonKey=key, limit=0)$meta$count
-# Pulls your data from GBIF, limit to 200 records as an example dataset
-spdat <- occ_search(taxonKey = key, return = "data", limit = 963)
-#pull out the data file
-spdat <- spdat$data
-#view the data that was returned
-View(spdat)
-
-#write.csv(spdat, "Phebalium glandulosum.csv")
 
 ###############################If you have the Data#################################
 list.files()
-dat <- read.csv("Phebalium glandulosum.csv")
-# keep only coordinates and species name
-#spdat <- select(dat, coords.x1, coords.x2, species)
-#colnames(spdat) <- c("longitude", "latitude", "species")
+#Load the metadata file
+metamap <- read.csv(metadatafile, stringsAsFactors = F)
 
-spdat <- dplyr::select(dat, decimalLongitude, decimalLatitude, scientificName, catalogNumber)
-colnames(spdat) <- c("longitude", "latitude", "species","catalogNumber")
+# Remove ARC870
 
-# remove NA values
-spdat <- na.omit(spdat)
+metamap1 <- metamap[-c(551),]
 
-###clean the coordinates##
-#dat<-dframe(spdat) %>% coord_impossible()
-#dat<-dframe(spdat) %>% coord_unlikely()
+
+#Keep only coordinates, OTU and collection id
+metamap3 <- dplyr::select(metamap1, decimal_longitude, decimal_latitude, scientific_name_OTU, id)
+colnames(metamap3) <- c("longitude", "latitude", "OTU","collectionNumber")
+
+#Keep only coordinates, OTU and collection number
+metamap2 <- dplyr::select(metamap1, decimal_longitude, decimal_latitude, scientific_name_OTU, voucher_collection_number)
+colnames(metamap2) <- c("longitude", "latitude", "OTU","collectionNumber")
+
+#Keep only coordinates, OTU and collection number, and collector ID
+metamap5 <- dplyr::select(metamap1, decimal_longitude, decimal_latitude, scientific_name_OTU, voucher_herbarium_collector_id, voucher_collection_number)
+colnames(metamap5) <- c("longitude", "latitude", "OTU","collectorID", "collectionNumber")
 
 
 # remove duplicates
-spdat <- unique(spdat)
+metamap6 <- unique(metamap5)
+
 #make a spatialpoints object
-sp <- SpatialPoints(cbind(spdat$longitude, spdat$latitude),
+MELsp <- SpatialPoints(cbind(metamap6$longitude, metamap6$latitude),
                     proj4string = CRS("+init=epsg:4326"))
+
+
 # re-add species names
-sp$species <- spdat$species
+MELsp$OTU <- metamap6$OTU
 #check the points
-mapview(sp) 
+mapview(MELsp) 
+typeof(MELsp)
 
 
-############################# first method ################################
-
-
-
-
-
-#dat.all <- read.csv("glandulosum.csv") #copy/paste the data in the function
-
-#spdat <- select(dat.all, decimalLongitude, decimalLatitude, scientificName, catalogNumber)
-#colnames(spdat) <- c("longitude", "latitude", "species","catalogNumber")
-
-#spdat <- na.omit(spdat)
-
-# clean the coordinates
-#dat<-dframe(spdat) %>% coord_impossible()
-#dat<-dframe(spdat) %>% coord_unlikely()
-
-#make a spatialpoints object
-#sp <- SpatialPoints(cbind(spdat$longitude, spdat$latitude),
-                    proj4string = CRS("+init=epsg:4326"))
-
-#sp$species <- spdat$species
-
-# quickly map and check our points to make sure there is 
-# nothing out of the ordinary (points in the ocean/arctic etc.)
-#mapview(sp) 
+######################### Download Aus map ######################
+#AUS_STATE_shp <- ne_countries(scale = "medium", returnclass = "sf") 
+#class(AUS_STATE_shp) 
+AUS_STATE_shp <- ne_states(country = 'Australia', returnclass = "sf")
+class(AUS_STATE_shp)
+ggplot(data = AUS_STATE_shp) + geom_sf() 
 
 
 
-######################### Second method #######################
+
+
+##########################
+#AUS_STATE_shp <- ne_countries(scale = "medium", returnclass = "sf") 
+#class(AUS_STATE_shp) AUS_STATE_shp <- ne_states(country = 'Australia', returnclass = "sf") class(AUS_STATE_shp) ggplot(data = AUS_STATE_shp) +   geom_sf()
+
+
 
 #import a shapefile of state boundaries
-AUS_STATE_shp <- read_sf("C:/Users/tshaldoo/Documents/R example/ASGS","STE_2016_AUST")
+#AUS_STATE_shp <- read_sf("C:/Users/hkenned6/Documents/Melichrus/Molecular/DArTseq_Melichrus_Git/map","AUS_2016_AUST")
+
+
+                         #C:/Users/tshaldoo/Documents/R example/ASGS","STE_2016_AUST")
 
 #list.files() # find the file we just made called "dataframe_file.csv"   
 #dat <- read.csv("Phebalium glandulosum subsp. angustifolium Paul G.Wilson.csv") #copy/paste the data in the function
@@ -159,6 +161,9 @@ AUS_STATE_shp <- read_sf("C:/Users/tshaldoo/Documents/R example/ASGS","STE_2016_
 #colnames(spdat) <- c("long", "lat", "species")
 # remove NA values
 #spdat <- na.omit(spdat)
+
+
+
 
 #make a new dataset of cities in Australia (google the locations)
 AUS_cities <- tribble(
